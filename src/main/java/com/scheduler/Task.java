@@ -19,6 +19,14 @@ public class Task {
         this.deadline = deadline;
         this.status = "Pending"; // Default status
     }
+    public Task(int index,String title, String description, int priority, LocalDateTime deadline,String status) {
+        this.index=index;
+        this.title = title;
+        this.description = description;
+        this.priority = priority;
+        this.deadline = deadline;
+        this.status = status; // Default status
+    }
 
     // Getters and Setters
     public String getTitle() {

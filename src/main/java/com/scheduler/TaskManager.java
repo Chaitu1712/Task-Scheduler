@@ -24,6 +24,7 @@ public class TaskManager {
             String title=task.getTitle();
             String description=task.getDescription();
             LocalDateTime deadline=task.getDeadline();
+            String status=task.getStatus();
             int priority=task.getPriority();
             if(!title.equals(""))
             temp.setTitle(title);
@@ -33,6 +34,8 @@ public class TaskManager {
             temp.setDeadline(deadline);
             if(priority!=-1)
             temp.setPriority(priority);
+            if(!temp.getStatus().equals(status))
+            temp.setStatus(status);
             tasks.set(index,temp);
         }
     }

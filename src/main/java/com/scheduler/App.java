@@ -66,8 +66,14 @@ public class App {
                 System.out.print("Enter new deadline (yyyy-MM-ddTHH:mm)(press enter if no changes): ");
                 String deadlineStr = sc.nextLine();
                 LocalDateTime deadline =deadlineStr.equals("")?null:LocalDateTime.parse(deadlineStr);
-
-                Task updatedTask = new Task(i,title, descriptionstr, priority, deadline);
+                System.out.print("Enter new Status (C-Completed,P-Pending) (press enter if no change):");
+                String status=sc.nextLine();
+                status=status.equals("")?"":status.charAt(0)=='C'? "Completed":"Pending";
+                Task updatedTask ;
+                if(status.equals(""))
+                updatedTask= new Task(i,title, descriptionstr, priority, deadline);
+                else
+                updatedTask=new Task(i, title, descriptionstr, priority, deadline, status);
                 taskManager.updateTask(index, updatedTask);
             } else if (choice == 4) {
                 // Delete Task

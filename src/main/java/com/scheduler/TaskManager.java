@@ -54,7 +54,7 @@ public class TaskManager {
     public List<Task> getAllTasks() {
         List<Task> temp=new ArrayList<>(tasks);
         temp.sort(Comparator.comparing(Task::getDeadline)
-                .thenComparing(Comparator.comparing(Task::getPriority).reversed()).thenComparing(Comparator.comparing(Task::getindex)));
+                .thenComparing(Comparator.comparing(Task::getPriority)).thenComparing(Comparator.comparing(Task::getindex)));
         return temp;
     }
 }

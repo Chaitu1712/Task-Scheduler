@@ -1,5 +1,6 @@
 package com.scheduler;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -22,7 +23,17 @@ public class TaskManager {
             Task temp=tasks.get(index);
             String title=task.getTitle();
             String description=task.getDescription();
-            
+            LocalDateTime deadline=task.getDeadline();
+            int priority=task.getPriority();
+            if(!title.equals(""))
+            temp.setTitle(title);
+            if(!description.equals(""))
+            temp.setDescription(description);
+            if(deadline!=null)
+            temp.setDeadline(deadline);
+            if(priority!=-1)
+            temp.setPriority(priority);
+            tasks.set(index,temp);
         }
     }
 
@@ -41,8 +52,9 @@ public class TaskManager {
     }
     // Get All Tasks sorted by deadline and priority
     public List<Task> getAllTasks() {
-        tasks.sort(Comparator.comparing(Task::getDeadline)
+        List<Task> temp=new ArrayList<>(tasks);
+        temp.sort(Comparator.comparing(Task::getDeadline)
                 .thenComparing(Comparator.comparing(Task::getPriority).reversed()).thenComparing(Comparator.comparing(Task::getindex)));
-        return tasks;
+        return temp;
     }
 }

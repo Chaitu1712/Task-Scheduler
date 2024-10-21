@@ -68,11 +68,11 @@ public class Task {
     }
     @Override
     public String toString() {
-        return "Task "+index +": -"+
-                "\nTitle: -\n" + title +
-                "\ndescription: -\n" + description +
-                "priority: -\n" + priority +
-                "\ndeadline: -\n" + deadline +
-                "\nstatus: -\n" + status;
+        return "Task "+index +":"+
+                "\nTitle:\n" + title +
+                "\nDescription:\n" + description +
+                "Priority:\n" + priority +
+                "\nDeadline:\n" + deadline +
+                "\nStatus:\n" + status;
     }
 }

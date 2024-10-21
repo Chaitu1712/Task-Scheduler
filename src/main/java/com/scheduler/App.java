@@ -17,7 +17,7 @@ public class App {
             System.out.print("Enter choice: ");
             int choice = sc.nextInt();
             sc.nextLine(); // Consume newline
-            int i=taskManager.lastIndex()==-1?0:taskManager.lastIndex();
+            int i=taskManager.lastIndex()==-1?0:taskManager.lastIndex()+1;
             if (choice == 1) {
                 // Add Task
                 System.out.print("Enter title: ");
@@ -49,9 +49,9 @@ public class App {
                 System.out.print("Enter task index to update: ");
                 int index = sc.nextInt();
                 sc.nextLine(); // Consume newline
-                System.out.print("Enter new title: ");
+                System.out.print("Enter new title (press enter if no changes): ");
                 String title = sc.nextLine();
-                System.out.println("Enter description (type 'end' on a new line to finish): ");
+                System.out.println("Enter description (type 'end' on a new line to finish) (type end directly if no changes): ");
                 StringBuilder description = new StringBuilder();
                 String line;
                 while (!(line = sc.nextLine()).equalsIgnoreCase("end")) {
@@ -60,12 +60,12 @@ public class App {
                 }
                 
                 String descriptionstr = description.toString();
-                System.out.print("Enter new priority (1-10): ");
+                System.out.print("Enter new priority (1-10)(enter -1 if no changes): ");
                 int priority = sc.nextInt();
                 sc.nextLine(); // Consume newline
-                System.out.print("Enter new deadline (yyyy-MM-ddTHH:mm): ");
+                System.out.print("Enter new deadline (yyyy-MM-ddTHH:mm)(press enter if no changes): ");
                 String deadlineStr = sc.nextLine();
-                LocalDateTime deadline = LocalDateTime.parse(deadlineStr);
+                LocalDateTime deadline =deadlineStr.equals("")?null:LocalDateTime.parse(deadlineStr);
 
                 Task updatedTask = new Task(i,title, descriptionstr, priority, deadline);
                 taskManager.updateTask(index, updatedTask);

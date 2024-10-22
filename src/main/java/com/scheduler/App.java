@@ -6,6 +6,13 @@ import java.util.Scanner;
 public class App {
     public static void main(String[] args) {
         TaskManager taskManager = new TaskManager();
+        taskManager.startScheduler(); // Start the scheduler thread
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            taskManager.stopScheduler();
+
+        }));
+
         Scanner sc = new Scanner(System.in);
         // Sample loop for managing tasks in console
         while (true) {
@@ -86,5 +93,6 @@ public class App {
             }
         }
         sc.close();
+        System.exit(0);
     }
 }

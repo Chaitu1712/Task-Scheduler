@@ -103,11 +103,10 @@ public class TaskManager {
                     query="UPDATE tasks SET idx=idx-1 WHERE idx>?";
                     pstmt= conn.prepareStatement(query);
                     pstmt.setInt(1,index);
-                    int rowsupdated=pstmt.executeUpdate();
-                    if(rowsupdated>0)
+                    tasks.clear();
                     loadTasksFromDatabase();
-                }  
-            }
+                    }
+                } 
             catch(SQLException e){
                 e.printStackTrace();
             }
@@ -125,7 +124,7 @@ public class TaskManager {
                 // Task is overdue
                 System.out.println("Task " + task.getTitle() + " is overdue. Rescheduling...");
                 LocalDateTime newDeadline = now.plusDays(1); // Reschedule to 1 day later (can be customized)
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-ddTHH:mm");
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
                 newDeadline.format(formatter);
 
                 try(Connection conn =databaseUtil.getConnection()){
@@ -145,15 +144,16 @@ public class TaskManager {
                 catch(SQLException e){
                     e.printStackTrace();
                 }
-                System.out.println("New deadline for " + task.getTitle() + ": " + newDeadline);
+                System.out.println("\nNew deadline for " + task.getTitle() + ": " + newDeadline);
             }
         }
     }
     // Remove completed tasks
     public void removeCompletedTasks() {
-        for (Task task : tasks) {
-            if (task.getStatus().equals("Completed")) {
-                deleteTask(task.getindex());
+        for(int i=0,j=0;i<tasks.size();i++){
+            if(tasks.get(i).getStatus().equals("Completed")){
+                deleteTask(i);
+                i--;
             }
         }
     }
@@ -213,7 +213,7 @@ public class TaskManager {
             while (running) {
                 checkAndReschedule();
                 try {
-                    Thread.sleep(10000); // Wait for 10 secs before checking again
+                    Thread.sleep(1000); // Wait for 1 sec before checking again
                 } catch (InterruptedException e) {
                     System.out.println("Scheduler interrupted, exiting.");
                     break;

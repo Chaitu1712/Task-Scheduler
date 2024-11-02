@@ -2,23 +2,53 @@ package com.scheduler;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.sql.*;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
+
 public class TaskManager {
-    private List<Task> tasks;
+    private List<Task> tasks =new ArrayList<>();
     private volatile boolean running = true;
 
     public TaskManager() {
-        this.tasks = new ArrayList<>();
+        loadTasksFromDatabase();
     }
-
+    public void loadTasksFromDatabase(){
+        String query="SELECT * FROM tasks order by idx";
+        try(Connection conn =databaseUtil.getConnection()){
+            PreparedStatement pstmt= conn.prepareStatement(query);
+            ResultSet rs=pstmt.executeQuery(query);
+            while(rs.next()){
+                Task task=new Task(rs.getInt("idx"),rs.getString("title"),rs.getString("description"),rs.getInt("priority"),rs.getTimestamp("deadline").toLocalDateTime(),rs.getString("status"));
+                tasks.add(task);
+            }
+        }
+        catch(SQLException e){
+            e.printStackTrace();
+        }
+    }
     // Add Task
     public void addTask(Task task) {
-        tasks.add(task);
+        String query="INSERT INTO tasks(idx,title,description,priority,deadline,status) VALUES(?,?,?,?,?,?)";
+        try(Connection conn =databaseUtil.getConnection()){
+            PreparedStatement pstmt= conn.prepareStatement(query);
+            pstmt.setInt(1,task.getindex());
+            pstmt.setString(2,task.getTitle());
+            pstmt.setString(3,task.getDescription());
+            pstmt.setInt(4,task.getPriority());
+            pstmt.setTimestamp(5,Timestamp.valueOf(task.getDeadline()));
+            pstmt.setString(6,task.getStatus());
+            int rowsadded=pstmt.executeUpdate();
+            if(rowsadded>0)
+            tasks.add(task);
+        }
+        catch(SQLException e){
+            e.printStackTrace();
+        }
     }
 
     // Update Task
@@ -40,17 +70,46 @@ public class TaskManager {
             temp.setPriority(priority);
             if(!temp.getStatus().equals(status))
             temp.setStatus(status);
-            tasks.set(index,temp);
+            String query="UPDATE tasks SET title=?,description=?,priority=?,deadline=?,status=? WHERE idx=?";
+            try(Connection conn =databaseUtil.getConnection()){
+                PreparedStatement pstmt= conn.prepareStatement(query);
+                pstmt.setString(1,temp.getTitle());
+                pstmt.setString(2,temp.getDescription());
+                pstmt.setInt(3,temp.getPriority());
+                pstmt.setTimestamp(4,Timestamp.valueOf(temp.getDeadline()));
+                pstmt.setString(5,temp.getStatus());
+                pstmt.setInt(6,temp.getindex());
+                int rowsupdated=pstmt.executeUpdate();
+                if(rowsupdated>0){
+                    tasks.set(index,temp);
+                }
+            }
+            catch(SQLException e){
+                e.printStackTrace();
+            }
         }
     }
 
     // Delete Task
     public void deleteTask(int index) {
         if (index >= 0 && index < tasks.size()) {
-            tasks.remove(index);
-            for(int i=index;i<tasks.size();i++)
-            {
-                tasks.get(i).setindex(tasks.get(i).getindex()-1);
+            String query="DELETE FROM tasks WHERE idx=?";
+
+            try(Connection conn =databaseUtil.getConnection()){
+                PreparedStatement pstmt= conn.prepareStatement(query);
+                pstmt.setInt(1,tasks.get(index).getindex());
+                int rowsdeleted=pstmt.executeUpdate();
+                if(rowsdeleted>0){
+                    query="UPDATE tasks SET idx=idx-1 WHERE idx>?";
+                    pstmt= conn.prepareStatement(query);
+                    pstmt.setInt(1,index);
+                    int rowsupdated=pstmt.executeUpdate();
+                    if(rowsupdated>0)
+                    loadTasksFromDatabase();
+                }  
+            }
+            catch(SQLException e){
+                e.printStackTrace();
             }
         }
     }
@@ -68,22 +127,33 @@ public class TaskManager {
                 LocalDateTime newDeadline = now.plusDays(1); // Reschedule to 1 day later (can be customized)
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-ddTHH:mm");
                 newDeadline.format(formatter);
-                task.setDeadline(newDeadline);
-                task.setPriority(1);
-                task.setStatus("Overdue");
+
+                try(Connection conn =databaseUtil.getConnection()){
+                    String query="UPDATE tasks SET deadline=?,priority=?,status=? WHERE idx=?";
+                    PreparedStatement pstmt= conn.prepareStatement(query);
+                    pstmt.setTimestamp(1,Timestamp.valueOf(newDeadline));
+                    pstmt.setInt(2,1);
+                    pstmt.setString(3,"Overdue");
+                    pstmt.setInt(4,task.getindex());
+                    int rowsupdated=pstmt.executeUpdate();
+                    if(rowsupdated>0){
+                        task.setDeadline(newDeadline);
+                        task.setPriority(1);
+                        task.setStatus("Overdue");
+                    }
+                }
+                catch(SQLException e){
+                    e.printStackTrace();
+                }
                 System.out.println("New deadline for " + task.getTitle() + ": " + newDeadline);
             }
         }
     }
     // Remove completed tasks
     public void removeCompletedTasks() {
-        Iterator<Task> iterator = tasks.iterator();
-        
-        while (iterator.hasNext()) {
-            Task task = iterator.next();
+        for (Task task : tasks) {
             if (task.getStatus().equals("Completed")) {
-                System.out.println("Removing completed task: " + task.getTitle());
-                iterator.remove(); // Remove the completed task
+                deleteTask(task.getindex());
             }
         }
     }
@@ -97,9 +167,34 @@ public class TaskManager {
                 long hoursUntilDeadline = Duration.between(now, task.getDeadline()).toHours();
                 
                 if (hoursUntilDeadline <= 48 && hoursUntilDeadline > 24) {
-                    task.setPriority((task.getPriority()-3)<1?1:(task.getPriority()-3));  // increase priority by 3
+                    int newPriority = (task.getPriority()-3)<1?1:(task.getPriority()-3);  // increase priority by 2
+                    try(Connection conn =databaseUtil.getConnection()){
+                        String query="UPDATE tasks SET priority=? WHERE idx=?";
+                        PreparedStatement pstmt= conn.prepareStatement(query);
+                        pstmt.setInt(1,newPriority);
+                        pstmt.setInt(2,task.getindex());
+                        int rowsupdated=pstmt.executeUpdate();
+                        if(rowsupdated>0){
+                            task.setPriority(newPriority);
+                        }
+                    }
+                    catch(SQLException e){
+                        e.printStackTrace();
+                    }
                 } else if (hoursUntilDeadline <= 24) {
-                    task.setPriority(1);  // Highest priority
+                    try(Connection conn =databaseUtil.getConnection()){
+                        String query="UPDATE tasks SET priority=? WHERE idx=?";
+                        PreparedStatement pstmt= conn.prepareStatement(query);
+                        pstmt.setInt(1,1);
+                        pstmt.setInt(2,task.getindex());
+                        int rowsupdated=pstmt.executeUpdate();
+                        if(rowsupdated>0){
+                            task.setPriority(1);
+                        }
+                    }
+                    catch(SQLException e){
+                        e.printStackTrace();
+                    }
                 }
             }
         }
